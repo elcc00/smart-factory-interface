@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Factory — Industrial Interface</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg0:#0a0e1a;--bg1:#0f172a;--bg2:#1e293b;--bg3:#263348;
+  --border:#334155;
+  --t0:#f1f5f9;--t1:#cbd5e1;--t2:#94a3b8;--t3:#64748b;
+  --green:#22c55e;--yellow:#f59e0b;--red:#ef4444;--orange:#f97316;
+  --blue:#38bdf8;--accent:#00d4aa;--purple:#a78bfa;
+  --font:'Segoe UI',system-ui,sans-serif;--mono:'Consolas','Courier New',monospace;
+}
+html,body{height:100%;font-family:var(--font);background:var(--bg0);color:var(--t0);overflow:hidden}
+#app{display:flex;height:100vh}
+/* SIDEBAR */
+#sidebar{width:235px;flex-shrink:0;background:var(--bg1);border-right:1px solid var(--border);display:flex;flex-direction:column}
+#logo{padding:22px 18px 16px;border-bottom:1px solid var(--border)}
+#logo .brand{font-size:13px;font-weight:700;letter-spacing:.12em;color:var(--accent)}
+#logo .sub{font-size:11px;color:var(--t3);margin-top:3px}
+nav{padding:10px;flex:1;overflow-y:auto}
+.nb{width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:none;background:transparent;cursor:pointer;font-size:13px;font-weight:400;color:var(--t2);font-family:var(--font);text-align:left;transition:background .15s,color .15s;margin-bottom:2px}
+.nb i{font-size:16px;flex-shrink:0}
+.nb:hover{background:var(--bg2);color:var(--t0)}
+.nb.active{background:var(--bg2);color:var(--t0);font-weight:600}
+.nb.active i{color:var(--accent)}
+.sf{padding:14px 18px;border-top:1px solid var(--border);font-size:12px}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:6px;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+#clock{font-size:11px;color:var(--t3);font-family:var(--mono);margin-top:5px}
+/* CONTENT */
+#content{flex:1;overflow-y:auto;background:var(--bg0)}
+.page{display:none;padding:24px 24px 40px;animation:fi .2s}
+.page.active{display:block}
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.pt{font-size:20px;font-weight:700;margin-bottom:3px}
+.ps{font-size:13px;color:var(--t2);margin-bottom:18px}
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:12px}
+/* CARD */
+.card{background:var(--bg2);border-radius:10px;border:1px solid var(--border);padding:14px 16px}
+.ct{font-size:10px;font-weight:600;color:var(--t3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.cv{font-size:24px;font-weight:700}
+.cu{font-size:12px;color:var(--t2);margin-left:3px;font-weight:400}
+.cd{font-size:11px;margin-top:3px;color:var(--t3)}
+.dup{color:var(--green)}.ddn{color:var(--red)}.dwn{color:var(--yellow)}
+.mc{text-align:center}.mc .big{font-size:32px;font-weight:700}.mc .lbl{font-size:11px;color:var(--t3);margin-top:3px}
+/* BADGE */
+.badge{font-size:11px;padding:3px 8px;border-radius:5px;font-weight:600;display:inline-block}
+.bok{background:#14532d;color:#86efac}.bwn{background:#451a03;color:#fcd34d}
+.ber{background:#450a0a;color:#fca5a5}.binf{background:#0c2a4a;color:#7dd3fc}
+/* ROW */
+.row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.row:last-child{border-bottom:none}
+/* BAR */
+.br{display:flex;align-items:center;gap:8px;margin-bottom:9px;font-size:12px}
+.br:last-child{margin-bottom:0}
+.bl{width:130px;color:var(--t2);flex-shrink:0}
+.bt{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.bf{height:100%;border-radius:3px;transition:width .6s}
+.bv{width:40px;text-align:right;font-size:11px;color:var(--t3)}
+/* LOG */
+.logbox{background:#060a12;border:1px solid var(--border);border-radius:8px;padding:10px;font-family:var(--mono);font-size:11px;color:var(--accent);height:150px;overflow-y:auto;line-height:1.7;white-space:pre-wrap;word-break:break-all}
+/* BANNER */
+.banner{display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 18px;border-radius:10px;font-size:14px;font-weight:700;margin-bottom:14px;border:1px solid var(--border)}
+/* ANOMALY */
+.ai{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.ai:last-child{border-bottom:none}
+.aico{width:30px;height:30px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
+.err{background:#450a0a;color:#fca5a5}.wrn{background:#451a03;color:#fcd34d}.inf{background:#0c2a4a;color:#7dd3fc}
+.an{font-size:13px;font-weight:600}.ad{font-size:12px;color:var(--t2);margin-top:2px;line-height:1.5}
+/* GANTT */
+.gr{display:flex;align-items:center;margin-bottom:7px;font-size:12px}
+.gl{width:185px;color:var(--t2);flex-shrink:0;font-size:11px}
+.gtr{flex:1;height:22px;background:var(--bg3);border-radius:4px;position:relative}
+.gb{position:absolute;top:1px;height:20px;border-radius:4px;display:flex;align-items:center;padding:0 6px;font-size:10px;font-weight:600;color:#fff;white-space:nowrap}
+/* FORMULA */
+.fbox{background:#060a12;border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-family:var(--mono);font-size:12px;margin-bottom:12px}
+.flbl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.frow{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #1e293b}
+.frow:last-child{border-bottom:none;font-weight:700;color:var(--accent);font-size:14px;margin-top:4px}
+.fbar{width:90px;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-left:10px;flex-shrink:0}
+.ffill{height:100%;border-radius:3px;transition:width .5s}
+/* CONVEYOR */
+.cwrap{width:100%;height:210px;background:#060a12;border-radius:10px;overflow:hidden;border:1px solid var(--border)}
+#qc-canvas{display:block}
+/* AI ACTIONS */
+.aia{background:#0a1628;border:1px solid #1e40af;border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:12px}
+.aia .aih{color:#93c5fd;font-weight:600;font-size:11px;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.aia .aib{color:var(--t2);line-height:1.6}
+.aia.on{border-color:#f59e0b;background:#140d00}
+.aia.on .aih{color:#fcd34d}
+/* MACHINE TABS */
+.mtabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.mt{padding:6px 13px;border-radius:6px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:12px;font-weight:500;color:var(--t2);font-family:var(--font);transition:all .15s}
+.mt:hover{background:var(--bg2);color:var(--t0)}
+.mt.active{background:var(--accent);color:#000;border-color:var(--accent)}
+/* CORR BADGE */
+.cb{font-size:10px;padding:1px 5px;border-radius:3px;background:#0c2a4a;color:#7dd3fc;margin-left:5px;font-family:var(--mono)}
+/* PROXUS TABLE */
+.px-row{display:grid;grid-template-columns:140px 110px 1fr 1fr 90px 80px;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);align-items:center;font-size:12px}
+.px-row:last-child{border-bottom:none}
+.px-chip{font-size:11px;padding:2px 7px;border-radius:4px;font-weight:600;text-align:center}
+.px-ok{background:#14532d;color:#86efac}
+.px-near{background:#1a3a2a;color:#6ee7b7}
+.px-warn{background:#451a03;color:#fcd34d}
+.px-err{background:#450a0a;color:#fca5a5}
+.px-na{background:var(--bg3);color:var(--t3)}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ═══ SIDEBAR ═══ -->
+<div id="sidebar">
+  <div id="logo">
+    <div class="brand">SMART FACTORY</div>
+    <div class="sub">Proxus-calibrated · 4 Machine Lines</div>
+  </div>
+  <nav>
+    <button class="nb active" onclick="nav('hmi',this)"><i class="ti ti-layout-dashboard"></i>HMI Dashboard</button>
+    <button class="nb" onclick="nav('predictive',this)"><i class="ti ti-tool"></i>Predictive Maintenance</button>
+    <button class="nb" onclick="nav('quality',this)"><i class="ti ti-shield-check"></i>Quality Control</button>
+    <button class="nb" onclick="nav('planning',this)"><i class="ti ti-calendar-stats"></i>Production Planning</button>
+    <button class="nb" onclick="nav('kpi',this)"><i class="ti ti-chart-bar"></i>KPI &amp; OEE</button>
+    <button class="nb" onclick="nav('anomaly',this)"><i class="ti ti-alert-triangle"></i>Anomaly Detection</button>
+    <button class="nb" onclick="nav('proxus',this)"><i class="ti ti-database"></i>Proxus Comparison</button>
+  </nav>
+  <div class="sf">
+    <div><span class="dot"></span><span style="color:var(--t1);font-size:12px" id="sb-st">All systems online</span></div>
+    <div id="clock"></div>
+  </div>
+</div>
+
+<!-- ═══ CONTENT ═══ -->
+<div id="content">
+
+<!-- ══════════ HMI DASHBOARD ══════════ -->
+<div class="page active" id="page-hmi">
+  <div class="pt">HMI Dashboard</div>
+  <div class="ps">Live sensor readings — Proxus-calibrated noise and OEE behaviour</div>
+  <div class="mtabs">
+    <button class="mt active" onclick="selM(0,this,'hmi')">MYK 200<span style="font-size:10px;color:rgba(0,0,0,.4)"> Boiler</span></button>
+    <button class="mt" onclick="selM(1,this,'hmi')">Zenith 400<span style="font-size:10px;color:var(--t3)"> Injection</span></button>
+    <button class="mt" onclick="selM(2,this,'hmi')">DMD 400<span style="font-size:10px;color:var(--t3)"> Compressor</span></button>
+    <button class="mt" onclick="selM(3,this,'hmi')">Delta-S 010<span style="font-size:10px;color:var(--t3)"> Chiller</span></button>
+  </div>
+  <div id="hmi-banner" class="banner" style="background:var(--bg2)">
+    <i id="hmi-ico" class="ti ti-circle-check" style="font-size:18px;color:var(--green)"></i>
+    <span id="hmi-st">SYSTEM NORMAL</span>
+    <span id="hmi-mn" style="font-size:12px;color:var(--t3);margin-left:8px">— MYK 200</span>
+  </div>
+  <div class="g5">
+    <div class="card"><div class="ct" id="l0">—</div><div><span class="cv" id="v0">—</span><span class="cu" id="u0">—</span></div><div class="cd" id="d0">—</div></div>
+    <div class="card"><div class="ct" id="l1">—</div><div><span class="cv" id="v1">—</span><span class="cu" id="u1">—</span></div><div class="cd" id="d1">—</div></div>
+    <div class="card"><div class="ct" id="l2">—</div><div><span class="cv" id="v2">—</span><span class="cu" id="u2">—</span></div><div class="cd" id="d2">—</div></div>
+    <div class="card"><div class="ct" id="l3">—</div><div><span class="cv" id="v3">—</span><span class="cu" id="u3">—</span></div><div class="cd" id="d3">—</div></div>
+    <div class="card"><div class="ct" id="l4">—</div><div><span class="cv" id="v4">—</span><span class="cu" id="u4">—</span></div><div class="cd" id="d4">—</div></div>
+  </div>
+  <div class="g3">
+    <div class="card"><div class="ct">Error Rate</div><div><span class="cv" id="h-err">—</span><span class="cu">%</span></div><div class="cd" id="hd-err">—</div></div>
+    <div class="card"><div class="ct">Risk Score</div><div><span class="cv" id="h-risk">—</span><span class="cu">/ 100</span></div><div class="cd" id="hd-risk">—</div></div>
+    <div class="card"><div class="ct">Quality Status</div><div style="margin-top:4px"><span id="h-qual" class="badge bok">—</span></div><div class="cd" id="hd-qual" style="margin-top:5px">—</div></div>
+  </div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="ct">Live History — last 60 readings (Sensor 1 · Risk Score)</div>
+    <div style="position:relative;height:180px"><canvas id="chart-hmi"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="ct" style="margin-bottom:6px">System Event Log</div>
+    <div class="logbox" id="hmi-log"></div>
+  </div>
+</div>
+
+<!-- ══════════ PREDICTIVE MAINTENANCE ══════════ -->
+<div class="page" id="page-predictive">
+  <div class="pt">Predictive Maintenance</div>
+  <div class="ps">Deviation-based risk · sensor correlations active · AI feedback loop adjusts simulation</div>
+  <div class="mtabs">
+    <button class="mt active" onclick="selM(0,this,'pm')">MYK 200</button>
+    <button class="mt" onclick="selM(1,this,'pm')">Zenith 400</button>
+    <button class="mt" onclick="selM(2,this,'pm')">DMD 400</button>
+    <button class="mt" onclick="selM(3,this,'pm')">Delta-S 010</button>
+  </div>
+
+  <div class="fbox">
+    <div class="flbl">Risk Score — |reading − nominal| / range × weight · Proxus calibrated: normal ops → 5–20 · alert → 30+ · critical → 55+</div>
+    <div class="frow"><span id="fl0">—</span><span style="display:flex;align-items:center;gap:6px"><span id="fv0" style="min-width:34px;text-align:right;color:var(--accent)">—</span><div class="fbar"><div class="ffill" id="fb0" style="background:#ef4444"></div></div></span></div>
+    <div class="frow"><span id="fl1">—</span><span style="display:flex;align-items:center;gap:6px"><span id="fv1" style="min-width:34px;text-align:right;color:var(--accent)">—</span><div class="fbar"><div class="ffill" id="fb1" style="background:#f59e0b"></div></div></span></div>
+    <div class="frow"><span id="fl2">—</span><span style="display:flex;align-items:center;gap:6px"><span id="fv2" style="min-width:34px;text-align:right;color:var(--accent)">—</span><div class="fbar"><div class="ffill" id="fb2" style="background:#38bdf8"></div></div></span></div>
+    <div class="frow"><span id="fl3">—</span><span style="display:flex;align-items:center;gap:6px"><span id="fv3" style="min-width:34px;text-align:right;color:var(--accent)">—</span><div class="fbar"><div class="ffill" id="fb3" style="background:#a78bfa"></div></div></span></div>
+    <div class="frow"><span>Error rate contribution</span><span style="display:flex;align-items:center;gap:6px"><span id="fv4" style="min-width:34px;text-align:right;color:var(--accent)">—</span><div class="fbar"><div class="ffill" id="fb4" style="background:#f97316"></div></div></span></div>
+    <div class="frow"><span>TOTAL RISK SCORE</span><span id="f-tot">—</span></div>
+  </div>
+
+  <div id="pm-banner" class="banner" style="background:var(--bg2)">
+    <i class="ti ti-activity" style="font-size:18px;color:var(--green)"></i>
+    <span id="pm-rl">LOW FAILURE RISK</span>
+  </div>
+
+  <div class="g2" style="margin-bottom:12px">
+    <div class="card">
+      <div class="ct" style="margin-bottom:8px">All-Machine Risk</div>
+      <div class="br"><div class="bl">MYK 200</div><div class="bt"><div class="bf" id="pmb0"></div></div><div class="bv" id="pmp0">—</div></div>
+      <div class="br"><div class="bl">Zenith 400</div><div class="bt"><div class="bf" id="pmb1"></div></div><div class="bv" id="pmp1">—</div></div>
+      <div class="br"><div class="bl">DMD 400</div><div class="bt"><div class="bf" id="pmb2"></div></div><div class="bv" id="pmp2">—</div></div>
+      <div class="br"><div class="bl">Delta-S 010</div><div class="bt"><div class="bf" id="pmb3"></div></div><div class="bv" id="pmp3">—</div></div>
+    </div>
+    <div class="card">
+      <div class="ct" style="margin-bottom:8px">Readings</div>
+      <div class="row"><span id="pm-l0">—</span><span id="pm-v0" style="font-family:var(--mono);font-size:12px">—</span></div>
+      <div class="row"><span id="pm-l1">—</span><span id="pm-v1" style="font-family:var(--mono);font-size:12px">—</span></div>
+      <div class="row"><span id="pm-l2">—</span><span id="pm-v2" style="font-family:var(--mono);font-size:12px">—</span></div>
+      <div class="row"><span id="pm-l3">—</span><span id="pm-v3" style="font-family:var(--mono);font-size:12px">—</span></div>
+      <div class="row"><span>Error Rate</span><span id="pm-v4" style="font-family:var(--mono);font-size:12px">—</span></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
+    <div class="ct" style="margin-bottom:10px">AI Maintenance Interventions — feedback loop adjusts sensor values in real time</div>
+    <div class="aia" id="aia0"><div class="aih"><i class="ti ti-wind"></i>Cooling Fan Control</div><div class="aib" id="aib0">Monitoring...</div></div>
+    <div class="aia" id="aia1"><div class="aih"><i class="ti ti-adjustments"></i>Pressure Relief Valve</div><div class="aib" id="aib1">Standby.</div></div>
+    <div class="aia" id="aia2"><div class="aih"><i class="ti ti-speedboat"></i>Motor Speed Limiter</div><div class="aib" id="aib2">Standby.</div></div>
+    <div class="aia" id="aia3"><div class="aih"><i class="ti ti-alarm"></i>Predictive Shutdown</div><div class="aib" id="aib3">No shutdown risk.</div></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">Sensor 1 &amp; Risk Score Trend</div>
+    <div style="position:relative;height:180px"><canvas id="chart-pm"></canvas></div>
+  </div>
+</div>
+
+<!-- ══════════ QUALITY CONTROL ══════════ -->
+<div class="page" id="page-quality">
+  <div class="pt">Quality Control</div>
+  <div class="ps">LiDAR conveyor scan · Zenith 400 parts · Proxus-calibrated: pass rate ~72–85% at nominal</div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="ct" style="margin-bottom:8px">Live Conveyor — LiDAR Point-Cloud Inspection</div>
+    <div class="cwrap" id="cwrap"><canvas id="qc-canvas"></canvas></div>
+    <div style="display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap;font-size:12px">
+      <span style="color:var(--t3)">Last product:</span>
+      <span id="qc-pid" style="font-weight:600;font-family:var(--mono)">—</span>
+      <span id="qc-lb" class="badge bok" style="margin-left:4px">—</span>
+      <span style="color:var(--t3);margin-left:8px">Defect type:</span>
+      <span id="qc-dt" style="color:var(--yellow)">—</span>
+      <span style="color:var(--accent);margin-left:10px">● good point</span>
+      <span style="color:var(--red)">● anomaly</span>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="ct" style="margin-bottom:8px">Zenith 400 Scan Context</div>
+      <div class="row"><span>Barrel Temp</span><span id="qc-t">—</span></div>
+      <div class="row"><span>Inj. Pressure</span><span id="qc-p">—</span></div>
+      <div class="row"><span>Screw Speed</span><span id="qc-r">—</span></div>
+      <div class="row"><span>Vibration</span><span id="qc-v">—</span></div>
+      <div class="row"><span>Risk Score</span><span id="qc-rs">—</span></div>
+    </div>
+    <div class="card">
+      <div class="ct" style="margin-bottom:8px">Session Statistics</div>
+      <div class="row"><span>Inspected</span><span id="qc-n" style="font-weight:700">0</span></div>
+      <div class="row"><span>Pass</span><span id="qc-pc" style="color:var(--green);font-weight:700">0</span></div>
+      <div class="row"><span>Defect</span><span id="qc-dc" style="color:var(--red);font-weight:700">0</span></div>
+      <div class="row"><span>Pass rate</span><span id="qc-pr" style="font-weight:700">—</span></div>
+      <div class="row"><span>Proxus ref. (TestResult)</span><span style="color:var(--accent)">61.5% pass</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct">Defect Type Breakdown</div>
+    <div class="br"><div class="bl">Surface scratch</div><div class="bt"><div class="bf" id="qb0" style="background:#38bdf8"></div></div><div class="bv" id="qp0">—</div></div>
+    <div class="br"><div class="bl">Dimensional</div><div class="bt"><div class="bf" id="qb1" style="background:var(--yellow)"></div></div><div class="bv" id="qp1">—</div></div>
+    <div class="br"><div class="bl">Assembly error</div><div class="bt"><div class="bf" id="qb2" style="background:var(--red)"></div></div><div class="bv" id="qp2">—</div></div>
+    <div class="br"><div class="bl">Short shot / sink</div><div class="bt"><div class="bf" id="qb3" style="background:var(--purple)"></div></div><div class="bv" id="qp3">—</div></div>
+  </div>
+</div>
+
+<!-- ══════════ PRODUCTION PLANNING ══════════ -->
+<div class="page" id="page-planning">
+  <div class="pt">Production Planning</div>
+  <div class="ps">Real machine schedule — OEE calibrated from Proxus: realistic range 47–72%</div>
+  <div class="g3">
+    <div class="card"><div class="ct">Active Work Orders</div><div><span class="cv">8</span></div><div class="cd dup">6 on schedule</div></div>
+    <div class="card"><div class="ct">Fleet OEE</div><div><span class="cv" id="pl-oee" style="color:var(--accent)">—</span><span class="cu">%</span></div><div class="cd" id="pl-oed">—</div></div>
+    <div class="card"><div class="ct">On-Time Delivery</div><div><span class="cv" style="color:var(--green)">87.5</span><span class="cu">%</span></div><div class="cd dup">↑ +1.2 this week</div></div>
+  </div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="ct" style="margin-bottom:12px">Production Schedule — Gantt (8h shift / 480 min)</div>
+    <div id="gantt"></div>
+  </div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="ct" style="margin-bottom:8px">Work Orders</div>
+    <div class="row" style="font-weight:600;color:var(--t1);font-size:11px"><span>Order</span><span>Machine</span><span>Operation</span><span>Cycle</span><span>Status</span></div>
+    <div class="row" style="font-size:12px"><span>WO-2847</span><span>Zenith 400</span><span>Housing cover · Hm1840 · 4000 kN</span><span>28s</span><span class="badge bok">Running</span></div>
+    <div class="row" style="font-size:12px"><span>WO-2848</span><span>Zenith 400</span><span>Bracket X-20 · Hm3150</span><span>22s</span><span class="badge bok">Queue</span></div>
+    <div class="row" style="font-size:12px"><span>WO-2849</span><span>DMD 400</span><span>Compressed air supply · 10 bar</span><span>cont.</span><span class="badge bok">Running</span></div>
+    <div class="row" style="font-size:12px"><span>WO-2850</span><span>MYK 200</span><span>Heating circuit · 200k kcal/h</span><span>cont.</span><span class="badge bwn">Partial</span></div>
+    <div class="row" style="font-size:12px"><span>WO-2851</span><span>Delta-S 010</span><span>Chilled water loop · 7°C</span><span>cont.</span><span class="badge bok">Running</span></div>
+    <div class="row" style="font-size:12px"><span>WO-2852</span><span>Zenith 400</span><span>End-cap moulding · Hm5070</span><span>35s</span><span class="badge ber">Delayed</span></div>
+  </div>
+  <div class="card">
+    <div class="ct">Machine Capacity</div>
+    <div class="br"><div class="bl">MYK 200 (Boiler)</div><div class="bt"><div class="bf" id="plc0" style="background:var(--accent)"></div></div><div class="bv" id="plp0">—</div></div>
+    <div class="br"><div class="bl">Zenith 400 (Inj.)</div><div class="bt"><div class="bf" id="plc1" style="background:var(--blue)"></div></div><div class="bv" id="plp1">—</div></div>
+    <div class="br"><div class="bl">DMD 400 (Comp.)</div><div class="bt"><div class="bf" id="plc2" style="background:var(--yellow)"></div></div><div class="bv" id="plp2">—</div></div>
+    <div class="br"><div class="bl">Delta-S 010 (Chlr)</div><div class="bt"><div class="bf" id="plc3" style="background:var(--purple)"></div></div><div class="bv" id="plp3">—</div></div>
+  </div>
+</div>
+
+<!-- ══════════ KPI & OEE ══════════ -->
+<div class="page" id="page-kpi">
+  <div class="pt">KPI &amp; OEE Monitoring</div>
+  <div class="ps">Proxus calibration: OEE baseline 47–72% · Availability 68–78% · Pass rate 61–85%</div>
+  <div class="g3">
+    <div class="card mc"><div class="ct">Fleet OEE</div><div class="big" id="kpi-oee" style="color:var(--accent)">—</div><div class="lbl">Proxus baseline ~47–72%</div></div>
+    <div class="card mc"><div class="ct">Availability</div><div class="big" id="kpi-av" style="color:var(--blue)">—</div><div class="lbl">Proxus uptime ref: 74%</div></div>
+    <div class="card mc"><div class="ct">Performance</div><div class="big" id="kpi-pf" style="color:var(--yellow)">—</div><div class="lbl">Actual vs ideal cycle</div></div>
+  </div>
+  <div class="g3">
+    <div class="card mc"><div class="ct">Quality Rate</div><div class="big" id="kpi-ql" style="color:var(--green)">—</div><div class="lbl">Good / total parts</div></div>
+    <div class="card mc"><div class="ct">Downtime</div><div class="big" id="kpi-dn" style="color:var(--red)">—</div><div class="lbl">Minutes this session</div></div>
+    <div class="card mc"><div class="ct">Defect Rate</div><div class="big" id="kpi-dr" style="color:var(--orange)">—</div><div class="lbl">% of produced</div></div>
+  </div>
+  <div id="kpi-banner" class="banner" style="background:var(--bg2)">
+    <i class="ti ti-chart-line" style="font-size:18px;color:var(--green)"></i>
+    <span id="kpi-st">FLEET PERFORMANCE: MODERATE</span>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="ct">OEE · Availability · Performance Trend</div>
+      <div style="position:relative;height:180px"><canvas id="chart-kpi"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ct">Per-Machine OEE</div>
+      <div class="br"><div class="bl">MYK 200</div><div class="bt"><div class="bf" id="km0"></div></div><div class="bv" id="km0v">—</div></div>
+      <div class="br"><div class="bl">Zenith 400</div><div class="bt"><div class="bf" id="km1"></div></div><div class="bv" id="km1v">—</div></div>
+      <div class="br"><div class="bl">DMD 400</div><div class="bt"><div class="bf" id="km2"></div></div><div class="bv" id="km2v">—</div></div>
+      <div class="br"><div class="bl">Delta-S 010</div><div class="bt"><div class="bf" id="km3"></div></div><div class="bv" id="km3v">—</div></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="ct">Downtime Causes</div>
+      <div class="row"><span>Planned maintenance</span><span id="dc0" style="color:var(--t2)">—</span></div>
+      <div class="row"><span>Unplanned breakdown</span><span id="dc1" style="color:var(--red)">—</span></div>
+      <div class="row"><span>Changeovers</span><span id="dc2" style="color:var(--t2)">—</span></div>
+      <div class="row"><span>Quality holds</span><span id="dc3" style="color:var(--yellow)">—</span></div>
+    </div>
+    <div class="card">
+      <div class="ct">Shift Log (cumulative)</div>
+      <div class="row"><span>Parts produced</span><span id="sl-parts" style="font-weight:700">—</span></div>
+      <div class="row"><span>Good parts</span><span id="sl-good" style="color:var(--green);font-weight:700">—</span></div>
+      <div class="row"><span>Total defects</span><span id="sl-def" style="color:var(--red);font-weight:700">—</span></div>
+      <div class="row"><span>Est. production time</span><span id="sl-time" style="color:var(--t2)">—</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ ANOMALY DETECTION ══════════ -->
+<div class="page" id="page-anomaly">
+  <div class="pt">Anomaly Detection</div>
+  <div class="ps">Thresholds calibrated from Proxus behaviour · LOW &lt;20 · MEDIUM 20–40 · HIGH ≥40</div>
+  <div id="an-banner" class="banner" style="background:var(--bg2)">
+    <i id="an-ico" class="ti ti-circle-check" style="font-size:18px;color:var(--green)"></i>
+    <span id="an-st">SYSTEM STATUS: NORMAL</span>
+  </div>
+  <div class="g3">
+    <div class="card"><div class="ct">Anomalies (session)</div><div><span class="cv" id="an-cnt" style="color:var(--orange)">0</span></div></div>
+    <div class="card"><div class="ct">Risk Level</div><div><span class="cv" id="an-rl">—</span></div><div class="cd" id="an-rld">—</div></div>
+    <div class="card"><div class="ct">Highest Risk Score</div><div><span class="cv" id="an-sc">—</span><span class="cu">/ 100</span></div><div class="cd dup">across all machines</div></div>
+  </div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="ct">Multi-Machine Sensor 1 Trend</div>
+    <div style="position:relative;height:180px"><canvas id="chart-an"></canvas></div>
+  </div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="ct" style="margin-bottom:8px">Active Anomalies</div>
+    <div id="an-list"><div style="color:var(--t3);font-size:13px;padding:10px 0">All machines within normal operating range.</div></div>
+  </div>
+  <div class="card">
+    <div class="ct" style="margin-bottom:6px">Anomaly Event Log</div>
+    <div class="logbox" id="an-log"></div>
+  </div>
+</div>
+
+<!-- ══════════ PROXUS COMPARISON ══════════ -->
+<div class="page" id="page-proxus">
+  <div class="pt">Proxus Dataset Comparison</div>
+  <div class="ps">Behaviour calibration applied to simulation — real Proxus data vs our simulated values</div>
+
+  <!-- Calibration summary cards -->
+  <div class="g4" style="margin-bottom:12px">
+    <div class="card mc">
+      <div class="ct">Proxus OEE Reference</div>
+      <div class="big" style="color:var(--yellow)">47.78%</div>
+      <div class="lbl">MixerOEE · fixed value</div>
+    </div>
+    <div class="card mc">
+      <div class="ct">Proxus Availability</div>
+      <div class="big" style="color:var(--blue)">74.0%</div>
+      <div class="lbl">BurnerStatus ON rate</div>
+    </div>
+    <div class="card mc">
+      <div class="ct">Proxus Pass Rate</div>
+      <div class="big" style="color:var(--orange)">61.5%</div>
+      <div class="lbl">TestResult PASS / total</div>
+    </div>
+    <div class="card mc">
+      <div class="ct">Our Sim Pass Rate</div>
+      <div class="big" id="px-sim-pass" style="color:var(--accent)">—</div>
+      <div class="lbl">Session cumulative</div>
+    </div>
+  </div>
+
+  <!-- Live parameter comparison table -->
+  <div class="card" style="margin-bottom:12px">
+    <div class="ct" style="margin-bottom:10px">Live Parameter Comparison — Proxus Reference vs Our Simulation</div>
+    <!-- Header -->
+    <div style="display:grid;grid-template-columns:140px 110px 1fr 1fr 90px 80px;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:10px;font-weight:600;color:var(--t3);letter-spacing:.06em;text-transform:uppercase">
+      <span>Source / Parameter</span><span>Our Machine</span><span>Proxus Value</span><span>Our Sim Value</span><span>Deviation</span><span>Status</span>
+    </div>
+    <div id="px-table"></div>
+  </div>
+
+  <!-- Calibration methodology -->
+  <div class="g2">
+    <div class="card">
+      <div class="ct" style="margin-bottom:10px">What was calibrated from Proxus</div>
+      <div class="row"><span style="font-size:12px">Sensor noise amplitude</span><span class="badge binf">Applied</span></div>
+      <div class="row"><span style="font-size:12px">OEE realistic range (47–72%)</span><span class="badge binf">Applied</span></div>
+      <div class="row"><span style="font-size:12px">Availability baseline (~74%)</span><span class="badge binf">Applied</span></div>
+      <div class="row"><span style="font-size:12px">Pass rate lower bound (~62%)</span><span class="badge binf">Applied</span></div>
+      <div class="row"><span style="font-size:12px">Risk score distribution</span><span class="badge binf">Applied</span></div>
+      <div class="row"><span style="font-size:12px">Sensor correlation patterns</span><span class="badge binf">Applied</span></div>
+    </div>
+    <div class="card">
+      <div class="ct" style="margin-bottom:10px">What was NOT changed (catalogue data)</div>
+      <div class="row"><span style="font-size:12px">MYK 200 nominal values</span><span class="badge bok">Catalogue</span></div>
+      <div class="row"><span style="font-size:12px">Zenith 400 operating ranges</span><span class="badge bok">Catalogue</span></div>
+      <div class="row"><span style="font-size:12px">DMD 400 pressure / flow specs</span><span class="badge bok">Catalogue</span></div>
+      <div class="row"><span style="font-size:12px">Delta-S 010 temperature targets</span><span class="badge bok">Catalogue</span></div>
+      <div class="row"><span style="font-size:12px">Machine-specific sensor labels</span><span class="badge bok">Catalogue</span></div>
+    </div>
+  </div>
+
+  <!-- Proxus raw data summary -->
+  <div class="card" style="margin-top:12px">
+    <div class="ct" style="margin-bottom:10px">Proxus Dataset Summary (raw values — different machines, behaviour reference only)</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+      <div style="background:var(--bg3);border-radius:8px;padding:10px">
+        <div style="font-size:10px;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">FuelFlow</div>
+        <div style="font-family:var(--mono);font-size:12px;color:var(--t1)">min: 76.44<br>max: 86.76<br>mean: 81.60<br>std: 3.65</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:8px;padding:10px">
+        <div style="font-size:10px;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Temperature (boiler)</div>
+        <div style="font-family:var(--mono);font-size:12px;color:var(--t1)">min: 155.00<br>max: 156.20<br>mean: 155.51<br>std: 0.34</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:8px;padding:10px">
+        <div style="font-size:10px;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">SteamPressure</div>
+        <div style="font-family:var(--mono);font-size:12px;color:var(--t1)">min: 7.000<br>max: 7.221<br>mean: 7.110<br>std: 0.054</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:8px;padding:10px">
+        <div style="font-size:10px;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">MixerOEE</div>
+        <div style="font-family:var(--mono);font-size:12px;color:var(--t1)">value: 47.78%<br>fixed constant<br>n=3 samples<br>—</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:8px;padding:10px">
+        <div style="font-size:10px;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">WaterLevel</div>
+        <div style="font-family:var(--mono);font-size:12px;color:var(--t1)">min: 65.90<br>max: 68.43<br>mean: 67.02<br>std: 0.67</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:8px;padding:10px">
+        <div style="font-size:10px;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">TestResult (pass rate)</div>
+        <div style="font-family:var(--mono);font-size:12px;color:var(--t1)">PASS: 123/200<br>FAIL: 77/200<br>Rate: 61.5%<br>n=200</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:8px;padding:10px">
+        <div style="font-size:10px;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">MoistureContent</div>
+        <div style="font-family:var(--mono);font-size:12px;color:var(--t1)">min: 13.81<br>max: 14.28<br>mean: 14.06<br>std: 0.14</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:8px;padding:10px">
+        <div style="font-size:10px;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">BurnerStatus</div>
+        <div style="font-family:var(--mono);font-size:12px;color:var(--t1)">ON:  148/200 (74%)<br>OFF:  52/200 (26%)<br>Uptime: 74%<br>→ calibrated</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /content -->
+</div><!-- /app -->
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// PROXUS CALIBRATION NOTES (applied to simulation behaviour)
+// ═══════════════════════════════════════════════════════════
+// Source: Device_Data.csv · Device_Data__1_.csv · Device_Data__2_.csv
+// These are DIFFERENT machines — used for BEHAVIOUR calibration only.
+//
+// Calibration applied:
+// 1. Sensor noise → tight Gaussian-like walk (Proxus σ: temp ±0.34°C,
+//    pressure ±0.054 bar). Our step sizes are now proportionally narrow.
+// 2. OEE → Proxus MixerOEE = 47.78% (fixed). We simulate 47–72%
+//    depending on risk. Previous 85-90% was unrealistic.
+// 3. Availability → Proxus BurnerStatus ON=74%, OFF=26%.
+//    Our availability now fluctuates 65–78% at nominal.
+// 4. Pass rate → Proxus TestResult pass=61.5%. We use 72–85%
+//    (injection moulding is cleaner than the Proxus process line,
+//    but the realistic lower bound is now respected).
+// 5. Risk score → Proxus sensors are very stable near nominal.
+//    Normal ops → risk 5–20. Deviation events → 30–55. Fault → 55+.
+// 6. Sensor correlations: temp↑ → pressure↑ (r≈0.8), rpm↓ → vib↑
+// 7. AI feedback loop: intervention actually modifies sensor vals
+// ═══════════════════════════════════════════════════════════
+
+// ── MACHINE DEFINITIONS ──────────────────────────────────
+// Each sensor: [label, unit, nominal, min, max, weight, noiseStd]
+// Noise is Gaussian approximated as uniform ±(2.5×std) for simplicity
+// Catalogue sources:
+//   MYK200: capacity 232kW, op.press 4bar, flue 78°C, water 80°C
+//   Zenith400: screw 187-333RPM, inj.press 1905-2661bar, barrel ~240°C
+//   DMD400: press 8-13bar, flow 206-260m³/h, motor 1480RPM, 30kW
+//   DeltaS010: water out 6-13°C, cond.air 28-40°C, cap 25-33kW
+
+const MACH = [
+  { // 0 — MYK 200 Boiler
+    name:'MYK 200', type:'Hot Water Boiler',
+    // Proxus calibrated: temp nom=155(analogous), press nom=3.9bar
+    sensors:[
+      {lbl:'Water Temp Out', u:'°C',  nom:80,   min:60,  max:95,  wt:30, ns:0.35},
+      {lbl:'Steam Pressure', u:'bar', nom:3.9,  min:2.5, max:4.5, wt:28, ns:0.05},
+      {lbl:'Burner Speed',   u:'RPM', nom:3000, min:2600,max:3200,wt:18, ns:8},
+      {lbl:'Vibration',      u:'mm/s',nom:2.0,  min:0,   max:8,   wt:15, ns:0.08},
+      {lbl:'Fuel Flow',      u:'m³/h',nom:81.6, min:76.4,max:86.8,wt:9,  ns:1.2},
+    ],
+    vals:[80, 3.9, 3000, 2.0, 81.6],
+    errRate:1.0,
+    // correlation matrix indices: [driven_sensor, driver_sensor, coeff]
+    // temp↑ → pressure↑ (r≈0.8); fuel↑ → temp↑ (r≈0.7)
+    corr:[[1,0,0.006],[0,4,0.008]],
+  },
+  { // 1 — Zenith 400 Injection
+    name:'Zenith 400', type:'Injection Moulding',
+    sensors:[
+      {lbl:'Barrel Temp',    u:'°C',  nom:240,  min:200, max:280, wt:30, ns:0.4},
+      {lbl:'Inj. Pressure',  u:'bar', nom:2200, min:1905,max:2661,wt:25, ns:12},
+      {lbl:'Screw Speed',    u:'RPM', nom:300,  min:187, max:333, wt:20, ns:1.5},
+      {lbl:'Vibration',      u:'mm/s',nom:3.0,  min:0,   max:12,  wt:15, ns:0.1},
+      {lbl:'Mould Temp',     u:'°C',  nom:60,   min:40,  max:90,  wt:10, ns:0.3},
+    ],
+    vals:[240, 2200, 300, 3.0, 60],
+    errRate:1.5,
+    // temp↑ → pressure↑; rpm↓ → vib↑
+    corr:[[1,0,1.2],[3,2,-0.008]],
+  },
+  { // 2 — DMD 400 Compressor
+    name:'DMD 400', type:'Screw Compressor',
+    sensors:[
+      {lbl:'Outlet Temp',    u:'°C',  nom:78,   min:60,  max:105, wt:30, ns:0.3},
+      {lbl:'Line Pressure',  u:'bar', nom:10,   min:8,   max:13,  wt:30, ns:0.06},
+      {lbl:'Motor Speed',    u:'RPM', nom:1480, min:1440,max:1500,wt:20, ns:3},
+      {lbl:'Vibration',      u:'mm/s',nom:4.0,  min:0,   max:14,  wt:15, ns:0.1},
+      {lbl:'Air Flow',       u:'m³/h',nom:240,  min:206, max:260, wt:5,  ns:1.5},
+    ],
+    vals:[78, 10, 1480, 4.0, 240],
+    errRate:0.8,
+    // press↑ → temp↑; flow↓ → vib↑
+    corr:[[0,1,0.8],[3,4,-0.004]],
+  },
+  { // 3 — Delta-S 010 Chiller
+    name:'Delta-S 010', type:'Air-Cooled Chiller',
+    sensors:[
+      {lbl:'Water Out Temp', u:'°C',  nom:7.0,  min:6,   max:13,  wt:35, ns:0.12},
+      {lbl:'Cond. Air Temp', u:'°C',  nom:30,   min:28,  max:40,  wt:20, ns:0.3},
+      {lbl:'Comp. Speed',    u:'RPM', nom:1450, min:1300,max:1500,wt:20, ns:4},
+      {lbl:'Vibration',      u:'mm/s',nom:3.5,  min:0,   max:12,  wt:15, ns:0.1},
+      {lbl:'Cooling Cap.',   u:'kW',  nom:29,   min:25,  max:33,  wt:10, ns:0.4},
+    ],
+    vals:[7.0, 30, 1450, 3.5, 29],
+    errRate:0.5,
+    // cond.air↑ → water out↑; comp↑ → cooling↑
+    corr:[[0,1,0.05],[4,2,0.003]],
+  },
+];
+
+// ── GLOBAL STATE ─────────────────────────────────────────
+const G = {
+  hmiM:0, pmM:0,
+  insp:0, defs:0, defT:[0,0,0,0],
+  anomCnt:0,
+  kpiOee:[], kpiAv:[], kpiPf:[],
+  hist: MACH.map(()=>({s1:[],risk:[]})),
+  // cumulative downtime per machine (minutes)
+  downtime: [0,0,0,0],
+  // AI intervention flags (modify sensor drift)
+  ai:{fanOn:false, valveOn:false, speedLim:false},
+  _oee:55, _av:72, _pf:80, _ql:75, _dn:5, _dr:3,
+  totalParts:0, goodParts:0,
+};
+let tick=0;
+
+const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+const gauss=(std)=>{ // Box-Muller
+  let u=0,v=0; while(!u) u=Math.random(); while(!v) v=Math.random();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)*std;
+};
+const push60=(a,v)=>{a.push(+v);if(a.length>60)a.shift();};
+
+// ── COMPUTE RISK (deviation-based) ───────────────────────
+// Normal ops (all sensors near nominal) → ~5–15
+// 1 sensor drifting → 20–35
+// Multiple sensors / correlated drift → 40–60+
+function riskOf(m){
+  let s=0;
+  m.sensors.forEach((sn,i)=>{
+    const dev=Math.abs(m.vals[i]-sn.nom);
+    const rng=Math.max(sn.max-sn.nom, sn.nom-sn.min, 0.001);
+    s+=Math.min(dev/rng,1)*sn.wt;
+  });
+  s+=(m.errRate/10)*5; // error rate: max 5 pts contribution
+  return clamp(s,0,100);
+}
+
+// ── MAIN TICK ─────────────────────────────────────────────
+function doTick(){
+  tick++;
+
+  MACH.forEach((m,mi)=>{
+    // 1. Gaussian random walk (Proxus-calibrated tight noise)
+    m.sensors.forEach((sn,i)=>{
+      m.vals[i]=clamp(m.vals[i]+gauss(sn.ns), sn.min, sn.max);
+    });
+
+    // 2. Sensor correlations
+    m.corr.forEach(([dst,src,coef])=>{
+      const drive=m.vals[src]-m.sensors[src].nom;
+      m.vals[dst]=clamp(m.vals[dst]+drive*coef*0.15, m.sensors[dst].min, m.sensors[dst].max);
+    });
+
+    // 3. Error rate — small random walk
+    m.errRate=clamp(m.errRate+gauss(0.3),0,6);
+
+    // 4. Compute risk
+    m.riskScore=riskOf(m);
+
+    // 5. Occasional realistic stress event (every ~120 ticks per machine, random)
+    if(Math.random()<0.008){
+      // push one sensor toward its limit
+      const si=Math.floor(Math.random()*m.sensors.length);
+      const sn=m.sensors[si];
+      const dir=Math.random()<0.5?1:-1;
+      m.vals[si]=clamp(m.vals[si]+dir*(sn.max-sn.min)*0.12, sn.min, sn.max);
+    }
+
+    // 6. Accumulate downtime when risk is high
+    if(m.riskScore>40) G.downtime[mi]+=1/60; // ~1 sec tick → fraction of minute
+
+    push60(G.hist[mi].s1, m.vals[0]);
+    push60(G.hist[mi].risk, m.riskScore);
+  });
+
+  // ── AI FEEDBACK LOOP ──────────────────────────────────
+  // Fan control: if any machine temp sensor 1 > 80% of (max-nom)+nom → engage
+  // When engaged, actively pull temp back toward nominal
+  const mpm = MACH[G.pmM];
+  const s0=mpm.sensors[0], s1=mpm.sensors[1], s3=mpm.sensors[3];
+  const tHi=s0.nom+(s0.max-s0.nom)*0.65;
+  const pHi=s1.nom+(s1.max-s1.nom)*0.65;
+  const vHi=s3.nom+(s3.max-s3.nom)*0.60;
+
+  // Fan: cool down sensor 0
+  G.ai.fanOn = mpm.vals[0]>tHi;
+  if(G.ai.fanOn) mpm.vals[0]=clamp(mpm.vals[0]-gauss(0.2)-0.3, s0.min, s0.max);
+
+  // Valve: bleed pressure
+  G.ai.valveOn = mpm.vals[1]>pHi;
+  if(G.ai.valveOn) mpm.vals[1]=clamp(mpm.vals[1]-Math.abs(gauss(0.05))-0.04, s1.min, s1.max);
+
+  // Speed limiter: damp vibration by slowing motor (sensor 2 down → sensor 3 down)
+  G.ai.speedLim = mpm.vals[3]>vHi;
+  if(G.ai.speedLim){
+    mpm.vals[2]=clamp(mpm.vals[2]-Math.abs(gauss(2))-1, s0.min, mpm.sensors[2].max);
+    mpm.vals[3]=clamp(mpm.vals[3]-Math.abs(gauss(0.05))-0.04, s3.min, s3.max);
+  }
+  // Recompute risk after AI action
+  mpm.riskScore=riskOf(mpm);
+
+  // ── FLEET KPI (Proxus-calibrated) ────────────────────
+  // Availability: Proxus ref 74%. We modulate by average risk.
+  const avgRisk=MACH.reduce((a,m)=>a+m.riskScore,0)/MACH.length;
+  // Normal ops risk ~10 → avail ~74%. Risk 40 → avail ~60%.
+  const av=clamp(74-(avgRisk-10)*0.45, 52, 78);
+  // Performance: actual/ideal cycle. Zenith 400 cycle 28s.
+  // Risk increases cycle time (machine slows). Ref: 100% at risk=10.
+  const pf=clamp(88-(avgRisk-10)*0.6, 60, 92);
+  // Quality rate: Proxus TestResult 61.5% ref. At nominal risk=10 → 80%.
+  // Risk↑ → quality↓.
+  const ql=clamp(80-(avgRisk-10)*0.8, 55, 84);
+  // OEE = A×P×Q / 10000
+  const oee=(av*pf*ql)/10000;
+  G._oee=oee; G._av=av; G._pf=pf; G._ql=ql;
+  G._dn=Math.round(G.downtime.reduce((a,b)=>a+b,0));
+  G._dr=clamp(100-ql,15,45);
+  push60(G.kpiOee,oee); push60(G.kpiAv,av); push60(G.kpiPf,pf);
+
+  // ── DEFECT LOGIC ──────────────────────────────────────
+  // Base defect prob from Zenith 400 risk.
+  // Proxus TestResult fail=38.5%, pass=61.5%.
+  // We target 72-85% pass at nominal (injection moulding > Proxus process line)
+  // but let it degrade toward 60% under stress.
+  const zRisk=MACH[1].riskScore;
+  const defP=clamp(0.20+(zRisk/100)*0.25, 0.15, 0.42);
+  G.isDefect=Math.random()<defP;
+  G.insp++; G.totalParts++;
+  if(G.isDefect){
+    G.defs++;
+    const r=Math.random();
+    if(r<0.38) G.defT[0]++;
+    else if(r<0.65) G.defT[1]++;
+    else if(r<0.85) G.defT[2]++;
+    else G.defT[3]++;
+  } else { G.goodParts++; }
+  G.passRate=((G.insp-G.defs)/G.insp*100).toFixed(1);
+  G.reworkRate=(G.defs/G.insp*100).toFixed(1);
+
+  // ── ANOMALY ───────────────────────────────────────────
+  const maxR=Math.max(...MACH.map(m=>m.riskScore));
+  G.isAnom=maxR>=40;
+  if(G.isAnom) G.anomCnt++;
+
+  // ── STATUS ────────────────────────────────────────────
+  const am=MACH[G.hmiM];
+  if(am.riskScore>=55)       {G.st='HIGH RISK — INSPECT NOW';    G.sc='var(--red)';}
+  else if(am.riskScore>=40)  {G.st='ELEVATED RISK — MONITOR';    G.sc='var(--orange)';}
+  else if(am.riskScore>=20)  {G.st='MEDIUM RISK';                G.sc='var(--yellow)';}
+  else                       {G.st='SYSTEM NORMAL';              G.sc='var(--green)';}
+
+  renderAll();
+}
+
+// ── HELPERS ───────────────────────────────────────────────
+const el=id=>document.getElementById(id);
+const set=(id,v)=>{const e=el(id);if(e)e.textContent=v;};
+const rl=r=>r>=55?'HIGH':r>=40?'ELEVATED':r>=20?'MEDIUM':'LOW';
+const rc=r=>r>=55?'var(--red)':r>=40?'var(--orange)':r>=20?'var(--yellow)':'var(--green)';
+
+function setBar(bid,pvid,frac,pctLabel){
+  const f=clamp(frac,0,1)*100;
+  const b=el(bid);if(b){b.style.width=f+'%';b.style.background=f>65?'var(--red)':f>40?'var(--yellow)':'var(--green)';}
+  if(pvid) set(pvid,(pctLabel!==undefined?pctLabel:f.toFixed(1))+'%');
+}
+function setDelta(id,val,lo,hi,sfx=''){
+  const e=el(id);if(!e)return;
+  if(val>hi)      {e.textContent=`↑ High (${val.toFixed(2)}${sfx})`;e.className='cd ddn';}
+  else if(val<lo) {e.textContent=`↓ Low (${val.toFixed(2)}${sfx})`;e.className='cd dwn';}
+  else            {e.textContent='✓ Normal';e.className='cd dup';}
+}
+function updateClock(){el('clock').textContent=new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+function nav(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  el('page-'+id).classList.add('active'); btn.classList.add('active');
+  if(id==='quality') setTimeout(resizeQC,30);
+}
+function selM(idx,btn,ctx){
+  const par=btn.parentElement; par.querySelectorAll('.mt').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
+  if(ctx==='hmi') G.hmiM=idx; else G.pmM=idx;
+  renderAll();
+}
+
+// ── CHARTS ────────────────────────────────────────────────
+function mkChart(id,dsets){
+  const ctx=el(id)?.getContext('2d');if(!ctx)return null;
+  return new Chart(ctx,{type:'line',data:{labels:Array(60).fill(''),datasets:dsets},options:{
+    animation:false,responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#94a3b8',font:{size:10}}}},
+    scales:{x:{ticks:{display:false},grid:{color:'#1e293b'}},y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'}}}
+  }});
+}
+function uch(c,...sets){if(!c)return;c.data.datasets.forEach((d,i)=>{if(sets[i])d.data=[...sets[i]];});c.update('none');}
+
+const cHmi=mkChart('chart-hmi',[
+  {label:'Sensor 1',  data:[],borderColor:'#ef4444',backgroundColor:'transparent',pointRadius:0,tension:.3},
+  {label:'Risk score',data:[],borderColor:'#00d4aa',backgroundColor:'transparent',pointRadius:0,tension:.3},
+]);
+const cPm=mkChart('chart-pm',[
+  {label:'Sensor 1',  data:[],borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.05)',fill:true,pointRadius:0,tension:.3},
+  {label:'Risk',      data:[],borderColor:'#00d4aa',backgroundColor:'transparent',pointRadius:0,tension:.3},
+]);
+const cAn=mkChart('chart-an',[
+  {label:'MYK 200',     data:[],borderColor:'#ef4444',backgroundColor:'transparent',pointRadius:0,tension:.3},
+  {label:'Zenith 400',  data:[],borderColor:'#f59e0b',backgroundColor:'transparent',pointRadius:0,tension:.3},
+  {label:'DMD 400',     data:[],borderColor:'#38bdf8',backgroundColor:'transparent',pointRadius:0,tension:.3},
+  {label:'Delta-S 010', data:[],borderColor:'#a78bfa',backgroundColor:'transparent',pointRadius:0,tension:.3},
+]);
+const cKpi=mkChart('chart-kpi',[
+  {label:'OEE %',         data:[],borderColor:'#00d4aa',backgroundColor:'transparent',pointRadius:0,tension:.3},
+  {label:'Availability %',data:[],borderColor:'#38bdf8',backgroundColor:'transparent',pointRadius:0,tension:.3},
+  {label:'Performance %', data:[],borderColor:'#f59e0b',backgroundColor:'transparent',pointRadius:0,tension:.3},
+]);
+
+// ── RENDER: HMI ───────────────────────────────────────────
+const hmiLog=[];
+function renderHmi(){
+  const m=MACH[G.hmiM];
+  m.sensors.forEach((s,i)=>{
+    set('l'+i,s.lbl); set('v'+i,m.vals[i].toFixed(i===1?0:2)); set('u'+i,s.u);
+    const lo=s.nom-(s.nom-s.min)*0.55, hi=s.nom+(s.max-s.nom)*0.55;
+    setDelta('d'+i,m.vals[i],lo,hi,' '+s.u);
+  });
+  set('h-err',m.errRate.toFixed(1));
+  set('h-risk',m.riskScore.toFixed(1));
+  set('hmi-mn','— '+m.name);
+  const dr=el('hd-risk');if(dr){dr.textContent='Level: '+rl(m.riskScore);dr.className='cd '+(m.riskScore>=40?'ddn':m.riskScore>=20?'dwn':'dup');}
+  const qb=el('h-qual');if(qb){qb.textContent=G.isDefect?'DEFECT':'QUALITY';qb.className='badge '+(G.isDefect?'ber':'bok');}
+  const ss=el('hmi-st');if(ss){ss.textContent=G.st;ss.style.color=G.sc;}
+  const ic=el('hmi-ico');if(ic){ic.className=m.riskScore>=40?'ti ti-alert-triangle':'ti ti-circle-check';ic.style.color=G.sc;}
+  const now=new Date().toLocaleTimeString('tr-TR');
+  const vstr=m.vals.map((v,i)=>`${m.sensors[i].lbl.split(' ')[0]}=${v.toFixed(2)}`).join(' ');
+  hmiLog.push(`[${now}] ${m.name} | ${vstr} ERR=${m.errRate.toFixed(1)}% RISK=${m.riskScore.toFixed(1)} | ${G.st}`);
+  if(hmiLog.length>200)hmiLog.shift();
+  const lg=el('hmi-log');if(lg){lg.textContent=hmiLog.join('\n');lg.scrollTop=lg.scrollHeight;}
+  uch(cHmi,G.hist[G.hmiM].s1,G.hist[G.hmiM].risk);
+}
+
+// ── RENDER: PREDICTIVE ────────────────────────────────────
+function renderPredictive(){
+  const m=MACH[G.pmM];
+  // formula rows
+  const cols=['#ef4444','#f59e0b','#38bdf8','#a78bfa','#f97316'];
+  m.sensors.forEach((s,i)=>{
+    const dev=Math.abs(m.vals[i]-s.nom);
+    const rng=Math.max(s.max-s.nom,s.nom-s.min,0.001);
+    const c=Math.min(dev/rng,1)*s.wt;
+    set('fl'+i,s.lbl); set('fv'+i,c.toFixed(1));
+    const b=el('fb'+i);if(b){b.style.width=(c/s.wt*100)+'%';b.style.background=cols[i];}
+    set('pm-l'+i,s.lbl);
+    set('pm-v'+i,m.vals[i].toFixed(i===1?0:2)+' '+s.u);
+  });
+  const errC=(m.errRate/10)*5; set('fv4',errC.toFixed(1));
+  const fb4=el('fb4');if(fb4)fb4.style.width=(errC/5*100)+'%';
+  set('pm-v4',m.errRate.toFixed(1)+' %');
+  const ft=el('f-tot');if(ft){ft.textContent=m.riskScore.toFixed(1)+' / 100';ft.style.color=rc(m.riskScore);}
+  const rl_e=el('pm-rl');if(rl_e){rl_e.textContent=rl(m.riskScore)+' FAILURE RISK';rl_e.style.color=rc(m.riskScore);}
+
+  // all machine bars (0–100 scale)
+  MACH.forEach((mm,i)=>{
+    setBar('pmb'+i,'pmp'+i,mm.riskScore/100,mm.riskScore.toFixed(1));
+  });
+
+  // ── AI INTERVENTION DISPLAY ──────────────────────────
+  const s0=m.sensors[0],s1=m.sensors[1],s3=m.sensors[3];
+  const tHi=s0.nom+(s0.max-s0.nom)*0.65;
+  const pHi=s1.nom+(s1.max-s1.nom)*0.65;
+  const vHi=s3.nom+(s3.max-s3.nom)*0.60;
+
+  // Fan
+  const a0=el('aia0'),a0b=el('aib0');
+  if(G.ai.fanOn){
+    if(a0)a0.classList.add('on');
+    if(a0b)a0b.textContent=`⚡ ACTIVE — Fan raised to ${Math.min(100,Math.round(40+(m.vals[0]-tHi)/(s0.max-tHi)*60))}% capacity. `+
+      `Current: ${m.vals[0].toFixed(2)}${s0.u} (threshold: ${tHi.toFixed(1)}${s0.u}). `+
+      `Sensor value is being actively cooled — watch trend chart.`;
+  } else {
+    if(a0)a0.classList.remove('on');
+    if(a0b)a0b.textContent=`Monitoring. ${s0.lbl}: ${m.vals[0].toFixed(2)}${s0.u} — fan at 30% (nominal). Threshold: ${tHi.toFixed(1)}${s0.u}.`;
+  }
+  // Valve
+  const a1=el('aia1'),a1b=el('aib1');
+  if(G.ai.valveOn){
+    if(a1)a1.classList.add('on');
+    if(a1b)a1b.textContent=`⚡ ACTIVE — Relief valve opened 15%. `+
+      `${s1.lbl}: ${m.vals[1].toFixed(3)}${s1.u} (threshold: ${pHi.toFixed(2)}${s1.u}). `+
+      `Bleeding excess pressure — sensor actively reduced each tick.`;
+  } else {
+    if(a1)a1.classList.remove('on');
+    if(a1b)a1b.textContent=`Standby. ${s1.lbl}: ${m.vals[1].toFixed(3)}${s1.u} — within safe limits. Threshold: ${pHi.toFixed(2)}${s1.u}.`;
+  }
+  // Speed limiter
+  const a2=el('aia2'),a2b=el('aib2');
+  if(G.ai.speedLim){
+    if(a2)a2.classList.add('on');
+    if(a2b)a2b.textContent=`⚡ ACTIVE — Motor speed reduced, vibration being damped. `+
+      `Vibration: ${m.vals[3].toFixed(2)}${s3.u} (threshold: ${vHi.toFixed(2)}${s3.u}). `+
+      `Speed: ${m.vals[2].toFixed(0)} RPM (reducing).`;
+  } else {
+    if(a2)a2.classList.remove('on');
+    if(a2b)a2b.textContent=`Standby. Vibration: ${m.vals[3].toFixed(2)}${s3.u} — nominal. Threshold: ${vHi.toFixed(2)}${s3.u}.`;
+  }
+  // Shutdown
+  const a3=el('aia3'),a3b=el('aib3');
+  if(m.riskScore>=55){
+    if(a3)a3.classList.add('on');
+    const eta=Math.max(2,Math.round((100-m.riskScore)*0.6));
+    if(a3b)a3b.textContent=`⚠ WARNING — Risk ${m.riskScore.toFixed(1)}/100. Estimated time to forced shutdown: ~${eta} min if trend continues. Immediate inspection recommended.`;
+  } else {
+    if(a3)a3.classList.remove('on');
+    if(a3b)a3b.textContent=`Risk ${m.riskScore.toFixed(1)}/100 — no shutdown predicted. All AI interventions effective.`;
+  }
+
+  uch(cPm,G.hist[G.pmM].s1,G.hist[G.pmM].risk);
+}
+
+// ── CONVEYOR CANVAS ───────────────────────────────────────
+const PRODS=[]; let lastSpawn=-999, convOff=0;
+
+function spawnProduct(){
+  const isD=G.isDefect;
+  const w=isD?36+Math.random()*10:44+Math.random()*4, h=32;
+  const pts=[];
+  for(let i=0;i<=16;i++){
+    const px=(i/16)*w, dip=(isD&&Math.random()<.40)?Math.random()*10:0;
+    pts.push({px,dip,bad:dip>4});
+  }
+  pts.push({px:-1,dip:h/2,side:true},{px:w+1,dip:h/2,side:true});
+  PRODS.push({x:900,w,h,isD,pts,scanned:false});
+}
+
+function drawConveyor(){
+  const canvas=el('qc-canvas');if(!canvas||canvas.width<10)return;
+  const W=canvas.width,H=canvas.height,ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  const bY=H*.68,bH=22,sX=W*.43;
+
+  // belt
+  const bg=ctx.createLinearGradient(0,bY,0,bY+bH);
+  bg.addColorStop(0,'#0f2744');bg.addColorStop(1,'#071428');
+  ctx.fillStyle=bg;ctx.fillRect(0,bY,W,bH);
+  ctx.strokeStyle='#1d4a7a';ctx.lineWidth=1;
+  for(let x=(convOff%48)-48;x<W;x+=48){ctx.beginPath();ctx.moveTo(x,bY);ctx.lineTo(x+24,bY+bH);ctx.stroke();}
+  convOff+=2;
+
+  // rollers
+  [.12,.50,.88].forEach(rx=>{
+    ctx.fillStyle='#1e3a5f';ctx.fillRect(W*rx-3,bY-4,6,bH+8);
+    ctx.fillStyle='#2d5a8e';
+    ctx.beginPath();ctx.arc(W*rx,bY-4,5,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(W*rx,bY+bH+4,5,0,Math.PI*2);ctx.fill();
+  });
+
+  // LiDAR head
+  ctx.fillStyle='#00d4aa';ctx.fillRect(sX-3,0,6,26);
+  ctx.beginPath();ctx.arc(sX,26,9,0,Math.PI*2);ctx.fill();
+  ctx.font='bold 9px monospace';ctx.fillStyle='#00d4aa';ctx.textAlign='center';ctx.fillText('LiDAR',sX,43);
+  ctx.fillStyle='rgba(0,212,170,.12)';ctx.beginPath();ctx.moveTo(sX,26);ctx.arc(sX,26,165,Math.PI*.08,Math.PI*.92,false);ctx.closePath();ctx.fill();
+
+  // scanning beam
+  ctx.save();ctx.translate(sX,26);
+  const beam=(tick*.4)%(Math.PI*.72)-Math.PI*.36;
+  for(let a=-Math.PI*.34;a<=Math.PI*.34;a+=0.055){
+    const br=Math.abs(a-beam)<.11?0.70:0.045;
+    ctx.strokeStyle=`rgba(0,212,170,${br})`;ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.sin(a)*165,Math.cos(a)*165);ctx.stroke();
+  }
+  ctx.restore();
+
+  // products
+  for(let i=PRODS.length-1;i>=0;i--){
+    const p=PRODS[i]; p.x-=2;
+    if(!p.scanned&&p.x<sX+14&&p.x+p.w>sX-14)p.scanned=true;
+    if(p.x<-110){PRODS.splice(i,1);continue;}
+    const px=p.x,py=bY-p.h;
+
+    // body
+    const pg=ctx.createLinearGradient(px,py,px,py+p.h);
+    pg.addColorStop(0,p.isD?'#5a1010':'#0a3020');pg.addColorStop(1,p.isD?'#3a0808':'#061c12');
+    ctx.fillStyle=pg;ctx.fillRect(px,py,p.w,p.h);
+    ctx.strokeStyle=p.isD?'#ef4444':'#22c55e';ctx.lineWidth=2;ctx.strokeRect(px,py,p.w,p.h);
+
+    // part detail lines
+    ctx.strokeStyle=p.isD?'rgba(239,68,68,.2)':'rgba(34,197,94,.12)';ctx.lineWidth=.5;
+    [.3,.7].forEach(f=>{ctx.beginPath();ctx.moveTo(px+p.w*f,py);ctx.lineTo(px+p.w*f,py+p.h);ctx.stroke();});
+
+    // defect scratch marks
+    if(p.isD){
+      ctx.strokeStyle='rgba(239,68,68,.7)';ctx.lineWidth=1;ctx.setLineDash([3,2]);
+      ctx.beginPath();ctx.moveTo(px+p.w*.1,py+7);ctx.lineTo(px+p.w*.55,py+15);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(px+p.w*.60,py+4);ctx.lineTo(px+p.w*.9,py+13);ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // LiDAR point cloud
+    if(p.scanned||p.x<sX+105){
+      p.pts.forEach(pt=>{
+        const dx=pt.side?(pt.px<0?px-2:px+p.w+2):px+pt.px;
+        const dy=pt.side?bY-p.h/2:bY-p.h-pt.dip;
+        ctx.fillStyle=pt.bad?'#ef4444':'#00d4aa';
+        ctx.beginPath();ctx.arc(dx,dy,2.5,0,Math.PI*2);ctx.fill();
+      });
+    }
+
+    // label
+    ctx.font='bold 9px monospace';ctx.fillStyle=p.isD?'#fca5a5':'#86efac';ctx.textAlign='center';
+    ctx.fillText(p.isD?'DEFECT':'OK',px+p.w/2,py-5);
+  }
+
+  // spawn every 4 ticks
+  if(tick-lastSpawn>=4){spawnProduct();lastSpawn=tick;}
+
+  // footer
+  ctx.fillStyle='#334155';ctx.font='9px monospace';ctx.textAlign='left';
+  ctx.fillText('→ direction of travel',6,bY+bH+14);
+  ctx.textAlign='right';
+  ctx.fillText(`Inspected: ${G.insp}  Defects: ${G.defs}  Pass: ${G.passRate}%`,W-6,bY+bH+14);
+}
+
+function resizeQC(){
+  const wrap=el('cwrap');if(!wrap)return;
+  const c=el('qc-canvas');if(!c)return;
+  c.width=wrap.clientWidth||600;c.height=wrap.clientHeight||210;
+}
+
+// ── RENDER: QUALITY ───────────────────────────────────────
+let qcPid=1000;
+function renderQuality(){
+  qcPid++;
+  const z=MACH[1];
+  set('qc-pid','PRD-'+qcPid);
+  set('qc-t',z.vals[0].toFixed(1)+' °C');
+  set('qc-p',z.vals[1].toFixed(0)+' bar');
+  set('qc-r',z.vals[2].toFixed(0)+' RPM');
+  set('qc-v',z.vals[3].toFixed(2)+' mm/s');
+  set('qc-rs',z.riskScore.toFixed(1)+' / 100');
+  set('qc-n',G.insp);set('qc-pc',G.insp-G.defs);set('qc-dc',G.defs);
+  set('qc-pr',G.passRate+'%');
+  const lb=el('qc-lb');if(lb){lb.textContent=G.isDefect?'DEFECT':'PASS';lb.className='badge '+(G.isDefect?'ber':'bok');}
+  const dt=el('qc-dt');
+  if(dt){
+    if(G.isDefect){
+      const types=['Surface scratch','Dimensional error','Assembly error','Short shot / sink'];
+      const r=Math.random();dt.textContent=r<.38?types[0]:r<.65?types[1]:r<.85?types[2]:types[3];dt.style.color='var(--red)';
+    } else {dt.textContent='—';dt.style.color='var(--t3)';}
+  }
+  const tot=G.defs||1;
+  [[0,'qb0','qp0'],[1,'qb1','qp1'],[2,'qb2','qp2'],[3,'qb3','qp3']].forEach(([i,bid,pid])=>{
+    const p=G.defT[i]/tot; const b=el(bid);if(b)b.style.width=(p*100).toFixed(0)+'%';
+    set(pid,(p*100).toFixed(0)+'%');
+  });
+  drawConveyor();
+}
+
+// ── RENDER: PLANNING ──────────────────────────────────────
+function renderPlanning(){
+  set('pl-oee',G._oee.toFixed(1));
+  const pd=el('pl-oed');if(pd){
+    pd.textContent=G._oee>=65?'Above Proxus baseline':G._oee>=55?'Near Proxus baseline':'Below Proxus baseline';
+    pd.className='cd '+(G._oee>=65?'dup':G._oee>=55?'dwn':'ddn');
+  }
+  MACH.forEach((m,i)=>{
+    const cap=clamp(78-m.riskScore*0.55,30,90);
+    const b=el('plc'+i);if(b){b.style.width=cap.toFixed(0)+'%';b.style.background=cap>65?'var(--green)':cap>45?'var(--yellow)':'var(--red)';}
+    set('plp'+i,cap.toFixed(0)+'%');
+  });
+}
+
+// ── RENDER: KPI ───────────────────────────────────────────
+function renderKpi(){
+  set('kpi-oee',G._oee.toFixed(1)+'%');
+  set('kpi-av', G._av.toFixed(1)+'%');
+  set('kpi-pf', G._pf.toFixed(1)+'%');
+  set('kpi-ql', G._ql.toFixed(1)+'%');
+  set('kpi-dn', G._dn+' min');
+  set('kpi-dr', G._dr.toFixed(1)+'%');
+
+  // per-machine OEE
+  MACH.forEach((m,i)=>{
+    const avgR=m.riskScore;
+    const av2=clamp(74-(avgR-10)*0.45,52,78);
+    const pf2=clamp(88-(avgR-10)*0.6,60,92);
+    const ql2=clamp(80-(avgR-10)*0.8,55,84);
+    const o2=(av2*pf2*ql2)/10000;
+    const b=el('km'+i);if(b){b.style.width=(o2).toFixed(1)+'%';b.style.background=o2>=65?'var(--green)':o2>=50?'var(--yellow)':'var(--red)';}
+    set('km'+i+'v',o2.toFixed(1)+'%');
+  });
+
+  const kT=G._oee>=65?'FLEET PERFORMANCE: GOOD':G._oee>=52?'FLEET PERFORMANCE: MODERATE':'FLEET PERFORMANCE: LOW';
+  const kC=G._oee>=65?'var(--green)':G._oee>=52?'var(--yellow)':'var(--red)';
+  const ks=el('kpi-st');if(ks){ks.textContent=kT;ks.style.color=kC;}
+
+  // downtime causes
+  const d=G._dn;
+  set('dc0',(d*0.38).toFixed(1)+' min');set('dc1',(d*0.30).toFixed(1)+' min');
+  set('dc2',(d*0.22).toFixed(1)+' min');set('dc3',(d*0.10).toFixed(1)+' min');
+
+  // shift log
+  const cycleT=28; // Zenith 400 nominal cycle seconds
+  set('sl-parts',G.totalParts);set('sl-good',G.goodParts);set('sl-def',G.defs);
+  set('sl-time',((G.totalParts*cycleT)/60).toFixed(1)+' min est.');
+
+  uch(cKpi,G.kpiOee,G.kpiAv,G.kpiPf);
+}
+
+// ── RENDER: ANOMALY ───────────────────────────────────────
+const anLog=[];
+function renderAnomaly(){
+  const maxR=Math.max(...MACH.map(m=>m.riskScore));
+  set('an-cnt',G.anomCnt);set('an-sc',maxR.toFixed(1));
+  const ar=el('an-rl');if(ar){ar.textContent=rl(maxR);ar.style.color=rc(maxR);}
+  const ard=el('an-rld');if(ard){ard.textContent='Score: '+maxR.toFixed(1)+' / 100';ard.className='cd '+(maxR>=40?'ddn':maxR>=20?'dwn':'dup');}
+  const ss=el('an-st'),si=el('an-ico');
+  if(G.isAnom){
+    if(ss){ss.textContent='ANOMALY DETECTED';ss.style.color='var(--red)';}
+    if(si){si.className='ti ti-alert-triangle';si.style.color='var(--red)';}
+  } else {
+    if(ss){ss.textContent='SYSTEM STATUS: NORMAL';ss.style.color='var(--green)';}
+    if(si){si.className='ti ti-circle-check';si.style.color='var(--green)';}
+  }
+  const list=el('an-list');
+  if(list){
+    const items=[];
+    MACH.forEach(m=>{
+      if(m.riskScore>=55)       items.push(['err',`${m.name}: CRITICAL risk ${m.riskScore.toFixed(1)}`,`${m.type} — multiple sensors deviated. Immediate inspection.`,'Critical']);
+      else if(m.riskScore>=40)  items.push(['wrn',`${m.name}: ELEVATED risk ${m.riskScore.toFixed(1)}`,`${m.type} — approaching threshold. AI interventions active.`,'Elevated']);
+      else if(m.riskScore>=20)  items.push(['inf',`${m.name}: MEDIUM risk ${m.riskScore.toFixed(1)}`,`${m.type} — minor deviation detected. Continue monitoring.`,'Medium']);
+    });
+    list.innerHTML=items.length===0
+      ?'<div style="color:var(--t3);font-size:13px;padding:10px 0">All machines within normal operating range (risk &lt;20).</div>'
+      :items.map(([cls,nm,ds,sv])=>`
+        <div class="ai">
+          <div class="aico ${cls}"><i class="ti ti-alert-triangle"></i></div>
+          <div style="flex:1"><div class="an">${nm}</div><div class="ad">${ds}</div></div>
+          <span class="badge ${cls==='err'?'ber':cls==='wrn'?'bwn':'binf'}" style="flex-shrink:0">${sv}</span>
+        </div>`).join('');
+  }
+  if(G.isAnom){
+    const now=new Date().toLocaleTimeString('tr-TR');
+    const rs=MACH.map(m=>`${m.name}:${m.riskScore.toFixed(1)}`).join(' ');
+    anLog.push(`[${now}] ANOMALY | ${rs}`);
+    if(anLog.length>200)anLog.shift();
+    const lg=el('an-log');if(lg){lg.textContent=anLog.join('\n');lg.scrollTop=lg.scrollHeight;}
+  }
+  uch(cAn,G.hist[0].s1,G.hist[1].s1,G.hist[2].s1,G.hist[3].s1);
+}
+
+// ── GANTT ─────────────────────────────────────────────────
+function buildGantt(){
+  const tasks=[
+    {n:'Zenith 400 — WO-2847 Housing',   s:0,  d:120,c:'#00d4aa'},
+    {n:'Zenith 400 — WO-2848 Bracket',   s:125,d:80, c:'#38bdf8'},
+    {n:'Zenith 400 — WO-2852 End-cap',   s:210,d:140,c:'#ef4444'},
+    {n:'DMD 400 — WO-2849 Air supply',   s:0,  d:480,c:'#f59e0b'},
+    {n:'MYK 200 — WO-2850 Heating',      s:0,  d:480,c:'#a78bfa'},
+    {n:'Delta-S 010 — WO-2851 Chilled',  s:0,  d:480,c:'#22c55e'},
+  ];
+  const tot=480,g=el('gantt');if(!g)return;
+  g.innerHTML=tasks.map(t=>`
+    <div class="gr">
+      <div class="gl">${t.n}</div>
+      <div class="gtr"><div class="gb" style="left:${t.s/tot*100}%;width:${t.d/tot*100}%;background:${t.c}">${t.d}m</div></div>
+    </div>`).join('');
+}
+
+// ── RENDER: PROXUS COMPARISON ─────────────────────────────
+// Proxus reference rows: [source_label, our_machine_idx, proxus_value,
+//   proxus_unit, getter_fn (returns our live value), note]
+const PX_ROWS = [
+  // KPI-level comparisons
+  ['MixerOEE (Proxus)',          -1, 47.78, '%',  ()=>G._oee,          'Fleet OEE'],
+  ['BurnerStatus uptime (Proxus)',-1, 74.0,  '%',  ()=>G._av,           'Availability'],
+  ['TestResult pass rate (Proxus)',-1,61.5,  '%',  ()=>parseFloat(G.passRate||0), 'QC Pass Rate'],
+  // MYK 200 sensors vs analogous Proxus boiler data
+  ['Temperature · boiler line',   0, 155.5, '°C', ()=>MACH[0].vals[0], 'Water Temp Out — note: Proxus line runs hotter'],
+  ['SteamPressure (Proxus line)', 0,  7.11, 'bar',()=>MACH[0].vals[1], 'MYK 200 Steam Pressure'],
+  ['FuelFlow mean (Proxus)',       0,  81.6, 'm³/h',()=>MACH[0].vals[4],'MYK 200 Fuel Flow'],
+  ['WaterLevel mean (Proxus)',     0,  67.0, '%',  ()=>clamp((MACH[0].vals[0]-60)/(95-60)*100,0,100), 'Water level proxy from temp'],
+  // Noise width comparisons (std deviation)
+  ['Temp noise σ (Proxus 0.34°C)',0,  0.34, '°C', ()=>MACH[0].sensors[0].ns, 'Our noise std — target ≤0.4'],
+  ['Pressure noise σ (Proxus 0.054)', 0, 0.054,'bar',()=>MACH[0].sensors[1].ns,'Our noise std — target ≤0.06'],
+];
+
+function pxChip(devPct, noNominal){
+  if(noNominal) return `<span class="px-chip px-na">N/A</span>`;
+  const a=Math.abs(devPct);
+  if(a<=5)  return `<span class="px-chip px-ok">✓ ±${a.toFixed(1)}%</span>`;
+  if(a<=15) return `<span class="px-chip px-near">~ ±${a.toFixed(1)}%</span>`;
+  if(a<=30) return `<span class="px-chip px-warn">⚠ ±${a.toFixed(1)}%</span>`;
+  return     `<span class="px-chip px-err">✗ ±${a.toFixed(1)}%</span>`;
+}
+
+function renderProxus(){
+  // update sim pass rate card
+  set('px-sim-pass', (G.passRate||'—')+'%');
+
+  const tbl = el('px-table'); if(!tbl) return;
+  tbl.innerHTML = PX_ROWS.map(([src, mi, pxVal, unit, getter, note])=>{
+    const simVal = getter();
+    const devPct = pxVal!==0 ? ((simVal-pxVal)/Math.abs(pxVal)*100) : 0;
+    const mName  = mi>=0 ? MACH[mi].name : 'Fleet';
+    // for noise rows the comparison is direct (both are std dev values)
+    const chip   = pxChip(devPct, false);
+    const devStr = devPct>0 ? `+${devPct.toFixed(1)}%` : `${devPct.toFixed(1)}%`;
+    const devCol = Math.abs(devPct)<=5?'var(--green)':Math.abs(devPct)<=30?'var(--yellow)':'var(--red)';
+    return `<div class="px-row">
+      <span style="color:var(--t2)">${src}</span>
+      <span style="color:var(--t3);font-size:11px">${mName}</span>
+      <span style="font-family:var(--mono);color:var(--t1)">${pxVal} ${unit}</span>
+      <span style="font-family:var(--mono);color:var(--accent)">${typeof simVal==='number'?simVal.toFixed(2):simVal} ${unit}
+        <span style="font-size:10px;color:var(--t3);display:block">${note}</span>
+      </span>
+      <span style="font-family:var(--mono);font-size:11px;color:${devCol}">${devStr}</span>
+      <span>${chip}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── RENDER ALL ────────────────────────────────────────────
+function renderAll(){
+  renderHmi();renderPredictive();renderQuality();
+  renderPlanning();renderKpi();renderAnomaly();renderProxus();
+}
+
+// ── WARMUP: populate 59 readings without DOM ─────────────
+function warmup(){
+  for(let i=0;i<59;i++){
+    MACH.forEach(m=>{
+      m.sensors.forEach((s,j)=>{m.vals[j]=clamp(m.vals[j]+gauss(s.ns),s.min,s.max);});
+      m.corr.forEach(([d,src,c])=>{const dv=m.vals[src]-m.sensors[src].nom;m.vals[d]=clamp(m.vals[d]+dv*c*0.15,m.sensors[d].min,m.sensors[d].max);});
+      m.errRate=clamp(m.errRate+gauss(0.3),0,6);
+      m.riskScore=riskOf(m);
+      push60(G.hist[m.id||MACH.indexOf(m)].s1,m.vals[0]);
+      push60(G.hist[m.id||MACH.indexOf(m)].risk,m.riskScore);
+    });
+    const avgR=MACH.reduce((a,m)=>a+m.riskScore,0)/MACH.length;
+    const av=clamp(74-(avgR-10)*0.45,52,78);
+    const pf=clamp(88-(avgR-10)*0.6,60,92);
+    const ql=clamp(80-(avgR-10)*0.8,55,84);
+    push60(G.kpiOee,(av*pf*ql)/10000);push60(G.kpiAv,av);push60(G.kpiPf,pf);
+  }
+}
+
+// ── BOOT ──────────────────────────────────────────────────
+buildGantt();
+resizeQC();
+window.addEventListener('resize',()=>{resizeQC();setTimeout(drawConveyor,40);});
+warmup();
+doTick();
+setInterval(doTick,1000);
+setInterval(updateClock,1000);
+updateClock();
+</script>
+</body>
+</html>
