@@ -608,7 +608,7 @@ const G = {
   insp:0, defs:0, defT:[0,0,0,0],
   anomCnt:0,
   kpiOee:[], kpiAv:[], kpiPf:[],
-  hist: MACH.map(()=>({s1:[],risk:[]})),
+  hist: MACH.map(()=>({s1:[],s2:[],s3:[],s4:[],s5:[],err:[],risk:[]})),
   // cumulative downtime per machine (minutes)
   downtime: [0,0,0,0],
   // AI intervention flags (modify sensor drift)
@@ -674,7 +674,12 @@ function doTick(){
     // 6. Accumulate downtime when risk is high
     if(m.riskScore>40) G.downtime[mi]+=1/60; // ~1 sec tick → fraction of minute
 
-    push60(G.hist[mi].s1, m.vals[0]);
+    push60(G.hist[mi].s1,   m.vals[0]);
+    push60(G.hist[mi].s2,   m.vals[1]);
+    push60(G.hist[mi].s3,   m.vals[2]);
+    push60(G.hist[mi].s4,   m.vals[3]);
+    push60(G.hist[mi].s5,   m.vals[4]);
+    push60(G.hist[mi].err,  m.errRate);
     push60(G.hist[mi].risk, m.riskScore);
   });
 
@@ -1236,7 +1241,12 @@ function warmup(){
       m.corr.forEach(([d,src,c])=>{const dv=m.vals[src]-m.sensors[src].nom;m.vals[d]=clamp(m.vals[d]+dv*c*0.15,m.sensors[d].min,m.sensors[d].max);});
       m.errRate=clamp(m.errRate+gauss(0.3),0,6);
       m.riskScore=riskOf(m);
-      push60(G.hist[m.id||MACH.indexOf(m)].s1,m.vals[0]);
+      push60(G.hist[m.id||MACH.indexOf(m)].s1,  m.vals[0]);
+      push60(G.hist[m.id||MACH.indexOf(m)].s2,  m.vals[1]);
+      push60(G.hist[m.id||MACH.indexOf(m)].s3,  m.vals[2]);
+      push60(G.hist[m.id||MACH.indexOf(m)].s4,  m.vals[3]);
+      push60(G.hist[m.id||MACH.indexOf(m)].s5,  m.vals[4]);
+      push60(G.hist[m.id||MACH.indexOf(m)].err, m.errRate);
       push60(G.hist[m.id||MACH.indexOf(m)].risk,m.riskScore);
     });
     const avgR=MACH.reduce((a,m)=>a+m.riskScore,0)/MACH.length;
@@ -1249,43 +1259,41 @@ function warmup(){
 
 // ── CSV EXPORT ────────────────────────────────────────────
 function exportCSV(machineIdx){
-  const m = MACH[machineIdx];
-  const hist = G.hist[machineIdx];
-  const rows = hist.s1.length;
+  const m    = MACH[machineIdx];
+  const h    = G.hist[machineIdx];
+  const rows = h.s1.length;
+  const allH = [h.s1, h.s2, h.s3, h.s4, h.s5];
 
-  // Build header
   const sensorHeaders = m.sensors.map(s => `${s.lbl} (${s.u})`).join(';');
   let csv = `Time (s);${sensorHeaders};Error Rate (%);Risk Score;Risk Level\n`;
 
-  // We have 60-reading history for s1 and risk
-  // For full sensor history, build from current snapshot + hist
   for(let i = 0; i < rows; i++){
-    const t = i + 1;
-    const s1val = hist.s1[i] !== undefined ? hist.s1[i].toFixed(2) : '';
-    const risk  = hist.risk[i] !== undefined ? hist.risk[i].toFixed(2) : '';
-    const level = hist.risk[i] >= 55 ? 'HIGH' : hist.risk[i] >= 30 ? 'MEDIUM' : 'LOW';
-    // For sensors 2-5 we use current values (history not stored per-sensor, only s1)
-    const otherSensors = m.sensors.slice(1).map(s => m.vals[m.sensors.indexOf(s)].toFixed(2)).join(';');
-    csv += `${t};${s1val};${otherSensors};${m.errRate.toFixed(2)};${risk};${level}\n`;
+    const t     = i + 1;
+    const vals  = allH.map(arr => arr[i] !== undefined ? (+arr[i]).toFixed(3) : '').join(';');
+    const err   = h.err[i]  !== undefined ? (+h.err[i]).toFixed(2)  : '';
+    const risk  = h.risk[i] !== undefined ? (+h.risk[i]).toFixed(2) : '';
+    const level = parseFloat(risk) >= 55 ? 'HIGH' : parseFloat(risk) >= 30 ? 'MEDIUM' : 'LOW';
+    csv += `${t};${vals};${err};${risk};${level}\n`;
   }
 
-  downloadCSV(csv, `${m.name.replace(' ','_')}_sensor_data.csv`);
+  downloadCSV(csv, `${m.name.replace(/ /g,'_')}_sensor_data.csv`);
 }
 
 function exportAllCSV(){
-  let csv = 'Time (s);Machine;';
-  // Use MYK 200 sensor structure as template, all machines have 5 sensors
-  csv += 'Sensor1;Sensor2;Sensor3;Sensor4;Sensor5;Error Rate (%);Risk Score;Risk Level\n';
-
   const rows = G.hist[0].s1.length;
+  let csv = 'Time (s);Machine;';
+  csv += MACH[0].sensors.map(s=>`${s.lbl} (${s.u})`).join(';') + ';Error Rate (%);Risk Score;Risk Level\n';
+
   for(let i = 0; i < rows; i++){
     MACH.forEach((m, mi) => {
-      const t = i + 1;
-      const s1   = G.hist[mi].s1[i]   !== undefined ? G.hist[mi].s1[i].toFixed(2)   : '';
-      const risk = G.hist[mi].risk[i]  !== undefined ? G.hist[mi].risk[i].toFixed(2) : '';
-      const level = G.hist[mi].risk[i] >= 55 ? 'HIGH' : G.hist[mi].risk[i] >= 30 ? 'MEDIUM' : 'LOW';
-      const others = m.vals.slice(1).map(v => v.toFixed(2)).join(';');
-      csv += `${t};${m.name};${s1};${others};${m.errRate.toFixed(2)};${risk};${level}\n`;
+      const h    = G.hist[mi];
+      const allH = [h.s1,h.s2,h.s3,h.s4,h.s5];
+      const t    = i + 1;
+      const vals = allH.map(arr => arr[i] !== undefined ? (+arr[i]).toFixed(3) : '').join(';');
+      const err  = h.err[i]  !== undefined ? (+h.err[i]).toFixed(2)  : '';
+      const risk = h.risk[i] !== undefined ? (+h.risk[i]).toFixed(2) : '';
+      const level = parseFloat(risk) >= 55 ? 'HIGH' : parseFloat(risk) >= 30 ? 'MEDIUM' : 'LOW';
+      csv += `${t};${m.name};${vals};${err};${risk};${level}\n`;
     });
   }
   downloadCSV(csv, 'smart_factory_all_machines.csv');
