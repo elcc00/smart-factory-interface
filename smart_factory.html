@@ -710,21 +710,17 @@ function doTick(){
   mpm.riskScore=riskOf(mpm);
 
   // ── FLEET KPI (Proxus-calibrated) ────────────────────
-  // Availability: Proxus ref 74%. We modulate by average risk.
   const avgRisk=MACH.reduce((a,m)=>a+m.riskScore,0)/MACH.length;
-  // Normal ops risk ~10 → avail ~74%. Risk 40 → avail ~60%.
   const av=clamp(74-(avgRisk-10)*0.45, 52, 78);
-  // Performance: actual/ideal cycle. Zenith 400 cycle 28s.
-  // Risk increases cycle time (machine slows). Ref: 100% at risk=10.
   const pf=clamp(88-(avgRisk-10)*0.6, 60, 92);
-  // Quality rate: Proxus TestResult 61.5% ref. At nominal risk=10 → 80%.
-  // Risk↑ → quality↓.
-  const ql=clamp(80-(avgRisk-10)*0.8, 55, 84);
-  // OEE = A×P×Q / 10000
+  // Quality rate: use real QC session data once enough inspections done
+  const ql = G.insp >= 10
+    ? clamp((G.insp-G.defs)/G.insp*100, 50, 99)
+    : clamp(80-(avgRisk-10)*0.8, 55, 84);
   const oee=(av*pf*ql)/10000;
   G._oee=oee; G._av=av; G._pf=pf; G._ql=ql;
   G._dn=Math.round(G.downtime.reduce((a,b)=>a+b,0));
-  G._dr=clamp(100-ql,15,45);
+  G._dr = G.insp > 0 ? G.defs/G.insp*100 : clamp(100-ql,15,45);
   push60(G.kpiOee,oee); push60(G.kpiAv,av); push60(G.kpiPf,pf);
 
   // ── DEFECT LOGIC ──────────────────────────────────────
@@ -1103,9 +1099,19 @@ function renderKpi(){
   set('kpi-oee',G._oee.toFixed(1)+'%');
   set('kpi-av', G._av.toFixed(1)+'%');
   set('kpi-pf', G._pf.toFixed(1)+'%');
-  set('kpi-ql', G._ql.toFixed(1)+'%');
+
+  // Quality Rate and Defect Rate from real QC session data
+  const realPassRate   = G.insp > 0 ? (G.insp - G.defs) / G.insp * 100 : G._ql;
+  const realDefectRate = G.insp > 0 ? G.defs / G.insp * 100 : G._dr;
+  set('kpi-ql', realPassRate.toFixed(1)+'%');
+  set('kpi-dr', realDefectRate.toFixed(1)+'%');
   set('kpi-dn', G._dn+' min');
-  set('kpi-dr', G._dr.toFixed(1)+'%');
+
+  // Shift log — also bind to real QC counts
+  set('sl-parts', G.totalParts);
+  set('sl-good',  G.insp - G.defs);
+  set('sl-def',   G.defs);
+  set('sl-time',  ((G.totalParts * 28) / 60).toFixed(1) + ' min est.');
 
   // per-machine OEE
   MACH.forEach((m,i)=>{
