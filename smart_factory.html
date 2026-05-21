@@ -803,13 +803,24 @@ function mkChart(id,dsets){
 }
 function uch(c,...sets){if(!c)return;c.data.datasets.forEach((d,i)=>{if(sets[i])d.data=[...sets[i]];});c.update('none');}
 
-const cHmi=mkChart('chart-hmi',[
-  {label:'Sensor 1',  data:[],borderColor:'#ef4444',backgroundColor:'transparent',pointRadius:0,tension:.3},
-  {label:'Risk score',data:[],borderColor:'#00d4aa',backgroundColor:'transparent',pointRadius:0,tension:.3},
+const SENSOR_COLORS = ['#ef4444','#38bdf8','#f59e0b','#a78bfa','#f97316'];
+
+// HMI chart: 5 sensors + risk score = 6 datasets, labels update dynamically
+const cHmi = mkChart('chart-hmi',[
+  {label:'—', data:[],borderColor:SENSOR_COLORS[0],backgroundColor:'transparent',pointRadius:0,tension:.3},
+  {label:'—', data:[],borderColor:SENSOR_COLORS[1],backgroundColor:'transparent',pointRadius:0,tension:.3},
+  {label:'—', data:[],borderColor:SENSOR_COLORS[2],backgroundColor:'transparent',pointRadius:0,tension:.3},
+  {label:'—', data:[],borderColor:SENSOR_COLORS[3],backgroundColor:'transparent',pointRadius:0,tension:.3},
+  {label:'—', data:[],borderColor:SENSOR_COLORS[4],backgroundColor:'transparent',pointRadius:0,tension:.3},
+  {label:'Risk Score', data:[],borderColor:'#00d4aa',backgroundColor:'transparent',pointRadius:0,tension:.3},
 ]);
 const cPm=mkChart('chart-pm',[
-  {label:'Sensor 1',  data:[],borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.05)',fill:true,pointRadius:0,tension:.3},
-  {label:'Risk',      data:[],borderColor:'#00d4aa',backgroundColor:'transparent',pointRadius:0,tension:.3},
+  {label:'—', data:[],borderColor:SENSOR_COLORS[0],backgroundColor:'rgba(239,68,68,.05)',fill:true,pointRadius:0,tension:.3},
+  {label:'—', data:[],borderColor:SENSOR_COLORS[1],backgroundColor:'transparent',pointRadius:0,tension:.3},
+  {label:'—', data:[],borderColor:SENSOR_COLORS[2],backgroundColor:'transparent',pointRadius:0,tension:.3},
+  {label:'—', data:[],borderColor:SENSOR_COLORS[3],backgroundColor:'transparent',pointRadius:0,tension:.3},
+  {label:'—', data:[],borderColor:SENSOR_COLORS[4],backgroundColor:'transparent',pointRadius:0,tension:.3},
+  {label:'Risk Score', data:[],borderColor:'#00d4aa',backgroundColor:'transparent',pointRadius:0,tension:.3},
 ]);
 const cAn=mkChart('chart-an',[
   {label:'MYK 200',     data:[],borderColor:'#ef4444',backgroundColor:'transparent',pointRadius:0,tension:.3},
@@ -844,7 +855,14 @@ function renderHmi(){
   hmiLog.push(`[${now}] ${m.name} | ${vstr} ERR=${m.errRate.toFixed(1)}% RISK=${m.riskScore.toFixed(1)} | ${G.st}`);
   if(hmiLog.length>200)hmiLog.shift();
   const lg=el('hmi-log');if(lg){lg.textContent=hmiLog.join('\n');lg.scrollTop=lg.scrollHeight;}
-  uch(cHmi,G.hist[G.hmiM].s1,G.hist[G.hmiM].risk);
+
+  // Update chart labels to match selected machine sensors
+  const h = G.hist[G.hmiM];
+  m.sensors.forEach((s,i)=>{
+    cHmi.data.datasets[i].label = `${s.lbl} (${s.u})`;
+  });
+  cHmi.data.datasets[5].label = 'Risk Score';
+  uch(cHmi, h.s1, h.s2, h.s3, h.s4, h.s5, h.risk);
 }
 
 // ── RENDER: PREDICTIVE ────────────────────────────────────
@@ -922,7 +940,10 @@ function renderPredictive(){
     if(a3b)a3b.textContent=`Risk ${m.riskScore.toFixed(1)}/100 — no shutdown predicted. All AI interventions effective.`;
   }
 
-  uch(cPm,G.hist[G.pmM].s1,G.hist[G.pmM].risk);
+  const hpm = G.hist[G.pmM];
+  m.sensors.forEach((s,i)=>{ cPm.data.datasets[i].label = `${s.lbl} (${s.u})`; });
+  cPm.data.datasets[5].label = 'Risk Score';
+  uch(cPm, hpm.s1, hpm.s2, hpm.s3, hpm.s4, hpm.s5, hpm.risk);
 }
 
 // ── CONVEYOR CANVAS ───────────────────────────────────────
