@@ -1258,24 +1258,27 @@ function warmup(){
 }
 
 // ── CSV EXPORT ────────────────────────────────────────────
+// Turkish Excel: delimiter = semicolon (;), decimal = comma (,)
+// sep= header tells Excel which delimiter to use automatically
+const fmt = n => String(parseFloat(n).toFixed(3)).replace('.',',');
+const fmt2= n => String(parseFloat(n).toFixed(2)).replace('.',',');
+
 function exportCSV(machineIdx){
   const m    = MACH[machineIdx];
   const h    = G.hist[machineIdx];
   const rows = h.s1.length;
   const allH = [h.s1, h.s2, h.s3, h.s4, h.s5];
 
-  // Use comma as delimiter, period as decimal — standard CSV
-  // Quote all values to prevent Excel date auto-conversion
-  const sensorHeaders = m.sensors.map(s => `"${s.lbl} (${s.u})"`).join(',');
-  let csv = `"Time (s)",${sensorHeaders},"Error Rate (%)","Risk Score","Risk Level"\n`;
+  const sensorHeaders = m.sensors.map(s => `${s.lbl} (${s.u})`).join(';');
+  let csv = `sep=;\n"Time (s)";${sensorHeaders};"Error Rate (%)";"Risk Score";"Risk Level"\n`;
 
   for(let i = 0; i < rows; i++){
-    const t    = i + 1;
-    const vals = allH.map(arr => arr[i] !== undefined ? `"${(+arr[i]).toFixed(3)}"` : '""').join(',');
-    const err  = h.err[i]  !== undefined ? `"${(+h.err[i]).toFixed(2)}"` : '""';
-    const risk = h.risk[i] !== undefined ? `"${(+h.risk[i]).toFixed(2)}"` : '""';
-    const level = parseFloat(risk) >= 55 ? 'HIGH' : parseFloat(risk) >= 30 ? 'MEDIUM' : 'LOW';
-    csv += `"${t}",${vals},${err},${risk},"${level}"\n`;
+    const vals  = allH.map(arr => arr[i] !== undefined ? fmt(arr[i]) : '').join(';');
+    const err   = h.err[i]  !== undefined ? fmt2(h.err[i])  : '';
+    const risk  = h.risk[i] !== undefined ? fmt2(h.risk[i]) : '';
+    const rNum  = parseFloat(h.risk[i]||0);
+    const level = rNum >= 55 ? 'HIGH' : rNum >= 30 ? 'MEDIUM' : 'LOW';
+    csv += `${i+1};${vals};${err};${risk};${level}\n`;
   }
 
   downloadCSV(csv, `${m.name.replace(/ /g,'_')}_sensor_data.csv`);
@@ -1283,36 +1286,32 @@ function exportCSV(machineIdx){
 
 function exportAllCSV(){
   const rows = G.hist[0].s1.length;
-  const hdr  = MACH[0].sensors.map(s=>`"${s.lbl} (${s.u})"`).join(',');
-  let csv = `"Time (s)","Machine",${hdr},"Error Rate (%)","Risk Score","Risk Level"\n`;
+  const hdr  = MACH[0].sensors.map(s=>`${s.lbl} (${s.u})`).join(';');
+  let csv = `sep=;\n"Time (s)";"Machine";${hdr};"Error Rate (%)";"Risk Score";"Risk Level"\n`;
 
   for(let i = 0; i < rows; i++){
     MACH.forEach((m, mi) => {
       const h    = G.hist[mi];
       const allH = [h.s1,h.s2,h.s3,h.s4,h.s5];
-      const t    = i + 1;
-      const vals = allH.map(arr => arr[i] !== undefined ? `"${(+arr[i]).toFixed(3)}"` : '""').join(',');
-      const err  = h.err[i]  !== undefined ? `"${(+h.err[i]).toFixed(2)}"` : '""';
-      const risk = h.risk[i] !== undefined ? `"${(+h.risk[i]).toFixed(2)}"` : '""';
-      const level = parseFloat(risk) >= 55 ? 'HIGH' : parseFloat(risk) >= 30 ? 'MEDIUM' : 'LOW';
-      csv += `"${t}","${m.name}",${vals},${err},${risk},"${level}"\n`;
+      const vals = allH.map(arr => arr[i] !== undefined ? fmt(arr[i]) : '').join(';');
+      const err  = h.err[i]  !== undefined ? fmt2(h.err[i])  : '';
+      const risk = h.risk[i] !== undefined ? fmt2(h.risk[i]) : '';
+      const rNum = parseFloat(h.risk[i]||0);
+      const level= rNum >= 55 ? 'HIGH' : rNum >= 30 ? 'MEDIUM' : 'LOW';
+      csv += `${i+1};"${m.name}";${vals};${err};${risk};${level}\n`;
     });
   }
   downloadCSV(csv, 'smart_factory_all_machines.csv');
 }
 
 function downloadCSV(content, filename){
-  // Add UTF-8 BOM so Excel opens correctly without date conversion
-  const BOM = '\uFEFF';
+  const BOM  = '\uFEFF';
   const blob = new Blob([BOM + content], { type: 'text/csv;charset=utf-8;' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
-  a.href     = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 
 // ── BOOT ──────────────────────────────────────────────────
